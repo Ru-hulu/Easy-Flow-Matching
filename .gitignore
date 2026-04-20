@@ -1,0 +1,7 @@
+.DS_Store
+__pycache__/
+*.pyc
+
+# Generated binary artifacts. Re-run toy_flow_matching.py to regenerate them.
+outputs*/samples.npz
+outputs*/model_params.npz
