@@ -136,6 +136,7 @@ def flow_matching_batch(
     t = rng.random((batch_size, 1))
     sigma_t = 1.0 - (1.0 - sigma_min) * t
     xt = sigma_t * x0 + t * x1
+    # Paper eq. (23): u_t(psi_t(x0) | x1), not the generic eq. (21) form.
     ut = x1 - (1.0 - sigma_min) * x0
     return xt, t, ut
 
