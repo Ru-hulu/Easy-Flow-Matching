@@ -134,9 +134,15 @@ def flow_matching_batch(
     x0 = rng.standard_normal((batch_size, 2))
     x1 = sample_target(rng, batch_size)
     t = rng.random((batch_size, 1))
+
+    # Paper eq. (20): OT conditional path with linear mean and std.
     sigma_t = 1.0 - (1.0 - sigma_min) * t
+
+    # Paper eq. (22): psi_t(x0) = sigma_t * x0 + t * x1.
     xt = sigma_t * x0 + t * x1
-    # Paper eq. (23): u_t(psi_t(x0) | x1), not the generic eq. (21) form.
+
+    # Paper eq. (23): u_t(psi_t(x0) | x1), obtained by substituting
+    # eq. (22) into the conditional vector field in eq. (21).
     ut = x1 - (1.0 - sigma_min) * x0
     return xt, t, ut
 
@@ -151,6 +157,8 @@ def train(args: argparse.Namespace) -> tuple[MLP, list[tuple[int, float]]]:
         xt, t, target_velocity = flow_matching_batch(rng, args.batch_size, args.sigma_min)
         pred, cache = model.forward(xt, t)
         diff = pred - target_velocity
+
+        # Paper eq. (9): Conditional Flow Matching objective.
         loss = float(np.mean(np.sum(diff * diff, axis=1)))
         grad_out = (2.0 / args.batch_size) * diff
         grads = model.backward(cache, grad_out)
@@ -171,6 +179,7 @@ def integrate(model: MLP, x0: np.ndarray, ode_steps: int) -> tuple[np.ndarray, n
 
     for i in range(ode_steps):
         t = i * dt
+        # Paper eqs. (1)-(2): integrate the learned CNF vector field.
         # Heun's method is still tiny, but much cleaner than Euler for learned flows.
         v0 = model.predict(x, t)
         proposal = x + dt * v0
