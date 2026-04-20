@@ -100,9 +100,9 @@ class MLP:
 
         return grads
 
-    def predict(self, x: np.ndarray, t_scalar: float) -> np.ndarray:
-        t = np.full((len(x), 1), t_scalar, dtype=np.float64)
-        pred, _ = self.forward(x, t)
+    def predict(self, phi_t: np.ndarray, t_scalar: float) -> np.ndarray:
+        t = np.full((len(phi_t), 1), t_scalar, dtype=np.float64)
+        pred, _ = self.forward(phi_t, t)
         return pred
 
 
@@ -172,23 +172,22 @@ def train(args: argparse.Namespace) -> tuple[MLP, list[tuple[int, float]]]:
 
 
 def integrate(model: MLP, x0: np.ndarray, ode_steps: int) -> tuple[np.ndarray, np.ndarray]:
-    x = x0.copy()
-    snapshots = [x.copy()]
+    phi_t = x0.copy()
+    snapshots = [phi_t.copy()]
     snapshot_steps = {ode_steps // 4, ode_steps // 2, (3 * ode_steps) // 4, ode_steps}
     dt = 1.0 / ode_steps
 
     for i in range(ode_steps):
         t = i * dt
         # Paper eqs. (1)-(2): integrate the learned CNF vector field.
-        # Heun's method is still tiny, but much cleaner than Euler for learned flows.
-        v0 = model.predict(x, t)
-        proposal = x + dt * v0
-        v1 = model.predict(proposal, min(1.0, t + dt))
-        x = x + 0.5 * dt * (v0 + v1)
+        velocity = model.predict(phi_t, t)
+        phi_t = phi_t + dt * velocity
+        # phi_{t+dt} ≈ phi_t + dt * v_theta(t, phi_t)
+        # 原文公式(1),将积分公式离散化得到的结果。
         if i + 1 in snapshot_steps:
-            snapshots.append(x.copy())
+            snapshots.append(phi_t.copy())
 
-    return x, np.stack(snapshots, axis=0)
+    return phi_t, np.stack(snapshots, axis=0)
 
 
 def write_loss(path: Path, losses: list[tuple[int, float]]) -> None:
