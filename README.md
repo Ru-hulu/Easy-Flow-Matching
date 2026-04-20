@@ -58,6 +58,22 @@ For a faster smoke test:
 python3 toy_flow_matching.py --steps 300 --samples 1000
 ```
 
+Or use the bundled runner:
+
+```bash
+./run.sh smoke
+./run.sh default
+./run.sh long
+```
+
+If your default `python3` does not have NumPy installed, either install the
+dependency or point the runner at another Python:
+
+```bash
+python3 -m pip install -r requirements.txt
+PYTHON_BIN=/path/to/python3 ./run.sh smoke
+```
+
 Outputs are written under `outputs/`:
 
 - `loss.csv`: training loss over time.
